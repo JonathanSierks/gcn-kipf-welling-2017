@@ -5,8 +5,7 @@ __pycache__/
 env/
 
 # Data
-data/raw/
-data/processed/
+data/*
 
 # Notebooks
 .ipynb_checkpoints/
