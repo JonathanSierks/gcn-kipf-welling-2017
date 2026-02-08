@@ -6,6 +6,7 @@ import scipy.sparse
 from scipy.sparse import coo_matrix, diags
 from torch_geometric.datasets import Planetoid
 
+'''
 def download_torch_geometrics():
 
     print(torch.__version__)
@@ -25,7 +26,8 @@ def download_torch_geometrics():
         -f https://data.pyg.org/whl/torch-{TORCH}+{CUDA}.html
 
     !pip install torch-geometric
-
+'''
+    
 def load_planetoid(name, data_root):
 
     dataset_path = os.path.join(data_root, "Planetoid", name)
@@ -35,7 +37,7 @@ def load_planetoid(name, data_root):
     else:
         print(f"Dataset {name} already available, no download necessary.")
 
-    dataset = Planetoid(root=os.path.join(data_root, "Planetoid"), name=name)
+    dataset = Planetoid(root=os.path.join(data_root, "Planetoid"), name=name)[0]
 
     return dataset
 
