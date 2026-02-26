@@ -38,22 +38,19 @@ def train(model, optimizer, loss_function, epochs, x, y, A_hat, train_mask, val_
 
 
 # download or (if already downloaded) reload datasets
-data_cora = load_planetoid("Cora", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
-data_citeseer = load_planetoid("Citeseer", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
-data_pubmed = load_planetoid("PubMed", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
+data = load_data("e.g. PubMed (aus configs.yaml)", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device:", device)
 
 # set-up data stuff
-data_cora_x = data_cora.x.to(device)
-data_cora_y = data_cora.y.to(device)
+data_x = data.x.to(device)
+data_y = data.y.to(device)
 
-A_hat_cora = compute_A_hat(data_cora).to_device(device)
-train_mask = data_cora.train_mask
-val_mask = data_cora.val_mask
-test_mask = data_cora.test_mask
-
+A_hat = compute_A_hat(data).to_device(device)
+train_mask = data.train_mask
+val_mask = data.val_mask
+test_mask = data.test_mask
 
 # set-up architecture
 model = GCN(1433, 32,7,0).to_device(device)
