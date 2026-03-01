@@ -29,16 +29,17 @@ def download_torch_geometrics():
     !pip install torch-geometric
 '''
     
-def load_data(name, data_root):
+def load_data(name, data_root, data_class):
 
-    dataset_path = os.path.join(data_root, "Planetoid", name)
+    dataset_path = os.path.join(data_root, data_class, name)
 
     if not os.path.exists(dataset_path):
         print(f"Dataset {name} not yet available. Download starts ...")
+        # tbd: add download function
     else:
         print(f"Dataset {name} already available, no download necessary.")
 
-    dataset = Planetoid(root=os.path.join(data_root, "Planetoid"), name=name)[0]
+    dataset = Planetoid(root=os.path.join(data_root, data_class), name=name)[0]
 
     return dataset
 

@@ -3,6 +3,7 @@
 from utils import *
 from model import *
 
+import argparse
 import torch.optim as optim
 import torch
 print(torch.__version__)
@@ -41,53 +42,54 @@ def train(model, optimizer, loss_function, epochs, x, y, A_hat, train_mask, val_
         train_loss.append(loss_train)
         val_loss.append(loss_val)
         val_acc.append(acc_val)
+        print(f"Epoch: {epoch+1} | Train Loss: {loss_train} | Val Loss: {loss_val} | Val Acc: {acc_val}")
 
     return train_loss, val_loss, val_acc
 
 
 
-def test():
-    pass
+def test(model, x, y, A_hat, test_mask):
+    model.eval()
+    with torch.no_grad():
+        out_test = model(x, A_hat)
+        pred = out_test.argmax(dim=1)
+        correct_test = (pred[test_mask] == y[test_mask]).sum().item()
+        acc_test = correct_test / test_mask.sum().item()
 
-
-# load hyperparams from config.yaml
-
-
-
-
-
-# data splitting/masking; device sending
-
-# define GCN architecture --> models.py (there: GCN class etc.) & put everything together
-# define BASELINE architecture --> baseline.py
-
-# train and online evaluation GCN --> here
-# train and online evaluation BASELINE --> here
-# print progress & save to results
+    return acc_test
 
 def main():
-    cfg = load_config("default.yaml")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="default_config.yaml")
+    args = parser.parse_args()
+
+    cfg = load_config(args.config)
     
     # device
     device = torch.device(cfg["train"]["device"] if torch.cuda.is_available() else "cpu")
 
-    # hyperparameters
-    lr = cfg["train"]["lr"]
-    epochs = cfg["train"]["epochs"]
-    hidden_dim = cfg["model"]["hidden_dim"]
-    dropout = cfg["model"]["dropout"]
-    weight_decay = cfg["model"]["weight_decay"]
-    # ...
-
-    print("device:", device)
-    print("lr:", lr, "epochs:", epochs)
-
-    # download or (if already downloaded) reload data and prep
-    data = load_data("hier: keyword welches data set; e.g. PubMed (aus configs.yaml)", os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"))
+    # download or (if already downloaded) reload data
+    data = load_data(cfg["data"]["data_name"], os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"), cfg["data"]["data_class"])
     data_x = data.x.to(device)
     data_y = data.y.to(device)
 
-    A_hat = compute_A_hat(data).to_device(device)
+    # hyperparameters
+    lr = cfg["train"]["lr"]
+    epochs = cfg["train"]["epochs"]
+    weight_decay = cfg["train"]["weight_decay"]
+    hidden_dim = cfg["model"]["hidden_dim"]
+    dropout = cfg["model"]["dropout"]
+
+    input_dim = data.num_features
+    output_dim = data.y.unique().size(0)
+
+    # output set-up
+    print("device:", device)
+    print("HYPERPARAMS", "lr:", lr, "epochs:", epochs, "weight-decay:", weight_decay)
+    print("MODEL ARCHITECTURE:", "input_dim:", input_dim, "hidden_dim:", hidden_dim, "output_dim:", output_dim, "dropout:", dropout)
+
+    # prep data
+    A_hat = compute_A_hat(data).to(device)
     train_mask = data.train_mask
     val_mask = data.val_mask
     test_mask = data.test_mask
@@ -95,32 +97,18 @@ def main():
     results = {"train_loss": [], "val_acc": [], "test_acc": []}
 
     # set-up architecture
-    model = GCN(1433, 32,7,0).to_device(device)
+    model = GCN(input_dim, hidden_dim, output_dim,dropout).to(device)
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
     loss_function = nn.CrossEntropyLoss()
 
     # training; incl. validation output every x epochs
-    train_loss, val_acc = train(model, optimizer, loss_function, epochs, data_x, data_y, A_hat)
-    test_acc = test()
+    train_loss, val_loss, val_acc = train(model, optimizer, loss_function, epochs, data_x, data_y, A_hat, train_mask, val_mask)
+    test_acc = test(model, data_x, data_y, A_hat, test_mask)
+    print(f" (default config) Training Complete! | Test Accuracy: {test_acc} | Final Validation Loss: {val_loss[-1]}| Final Validation Accuracy: {val_acc[-1]}")
 
     results["train_loss"].append(train_loss)
     results["val_acc"].append(val_acc)
     results["test_acc"].append(test_acc)
-
-
-
-
-
-
-
-
-
-
-
-
-    gcn = GCN(2707, 32, 7)
-
-
 
 if __name__ == "__main__":
     main()
