@@ -1,0 +1,19 @@
+seed: 42
+
+data:
+  path: data/dataset.pt
+  batch_size: 64
+  num_workers: 4
+
+model:
+  name: gcn
+  hidden_dim: 128
+  dropout: 0.5
+  weight_decay: 5e-4
+
+train:
+  epochs: 200
+  lr: 0.01
+  weight_decay: 0.0005
+  device: cuda   # oder cpu
+  log_every: 10

@@ -2,6 +2,7 @@ import torch
 import os
 import numpy as np
 import scipy.sparse
+import yaml
 
 from scipy.sparse import coo_matrix, diags
 from torch_geometric.datasets import Planetoid
@@ -28,7 +29,7 @@ def download_torch_geometrics():
     !pip install torch-geometric
 '''
     
-def load_planetoid(name, data_root):
+def load_data(name, data_root):
 
     dataset_path = os.path.join(data_root, "Planetoid", name)
 
@@ -69,3 +70,7 @@ def compute_A_hat(data):
                         size=A_hat.shape, 
                         dtype=torch.float32)
     return A_processed
+
+def load_config(path="config.yaml"):
+    with open(path, "r") as f:
+        return yaml.safe_load(f)
