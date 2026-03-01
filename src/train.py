@@ -112,3 +112,13 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# TO-DO
+# - notebook aufbereiten: plotten etc.
+# - notebook: verschiedene experimente?
+# - nochmal ins paper schauen und hyperparams etc. kontrollieren
+# - configs für die anderen datensets anlegen; ggf. alles über schleife laufen lassen und vollständige results in file schreiben?
+#   - + was haben wir noch im DL kurs gemacht? ins assignment gucken; von da auch gut theorie übernehmbar
+# - wie paper erweitern? was könnte ich noch testen?
+# - aufschrieb kladde anfangen; theorie gur durchziehen
