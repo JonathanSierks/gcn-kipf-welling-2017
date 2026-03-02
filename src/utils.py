@@ -35,7 +35,6 @@ def load_data(name, data_root, data_class):
 
     if not os.path.exists(dataset_path):
         print(f"Dataset {name} not yet available. Download starts ...")
-        # tbd: add download function
     else:
         print(f"Dataset {name} already available, no download necessary.")
 
@@ -66,10 +65,12 @@ def compute_A_hat(data):
     A_hat = (D_norm.power(-0.5) @ A_self @ D_norm.power(-0.5)).tocoo()
 
     # transform A_hat to torch sparse tensor
-    A_processed = torch.sparse_coo_tensor(A_hat.nonzero(), 
-                        A_hat.data, 
-                        size=A_hat.shape, 
-                        dtype=torch.float32)
+    coo = A_hat.tocoo()
+    indices = np.vstack((coo.row, coo.col))
+    indices = torch.from_numpy(indices).long()
+    values  = torch.from_numpy(coo.data).float()
+    A_processed = torch.sparse_coo_tensor(indices, values, size=coo.shape).coalesce()
+    
     return A_processed
 
 def load_config(path="config.yaml"):
