@@ -160,9 +160,14 @@ if __name__ == "__main__":
 
 # TO-DO
 # - notebook aufbereiten: plotten etc.
-# - notebook: verschiedene experimente?
+# - notebook: verschiedene experimente --> e.g. nochmal zeigen das mit etwas mehr hidden size auch acc noch weiter steigt?
 # - nochmal ins paper schauen und hyperparams etc. kontrollieren
-# - configs für die anderen datensets anlegen; ggf. alles über schleife laufen lassen und vollständige results in file schreiben?
+
+# t-SNE abbildung der finalen embeddings ausgeben und speichern
+
 #   - + was haben wir noch im DL kurs gemacht? ins assignment gucken; von da auch gut theorie übernehmbar
 # - wie paper erweitern? was könnte ich noch testen?
+#   --> mini batch learning; dafür müsste ich dann aber am besten zeigen (nach kurzer überlegung), dass acc ungefähr gleich bleibt, die compute zeit aber runtergeht; dafür wiederum muss ich einen compute zeit tracker einbauen, so wie das auch kipf und welling gemacht haben
 # - aufschrieb kladde anfangen; theorie gur durchziehen
+
+# noch einen part adden, ggf. neues repo: graph classification (also die restlichen aufgaben aus dem assignment)
