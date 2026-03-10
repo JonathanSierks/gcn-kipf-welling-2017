@@ -7,6 +7,8 @@ import argparse
 import math
 import torch.optim as optim
 import torch
+import time
+import numpy as np
 print(torch.__version__)
 print(torch.version.cuda)
 
@@ -24,20 +26,44 @@ def train(model, optimizer, loss_function, epochs, x, y, A_hat, train_mask, val_
     patience_left = patience
     best_loss = math.inf
     best_state = None
+    best_epoch = -1
+    best_val_acc = 0.0
 
+    history = {
+        "train_loss": [],
+        "val_loss": [],
+        "val_acc": [],
+        "epoch_train_time": [],
+        "epoch_total_time": []
+    }
 
-    train_loss, val_loss, val_acc = [], [], []
-    best_val_loss, best_val_acc = 0, 0
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    total_start = time.perf_counter()
 
     for epoch in range(epochs):
+        
+        # account for timing missmatch when training on cuda
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        epoch_start = time.perf_counter()
 
         # train block
         model.train()
         optimizer.zero_grad()
+
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        train_start = time.perf_counter()
+
         output_train = model(x, A_hat)
         loss_train = loss_function(output_train[train_mask], y[train_mask])
         loss_train.backward()
         optimizer.step()
+
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        train_time = time.perf_counter() - train_start
 
         # validation block
         model.eval()
@@ -48,30 +74,58 @@ def train(model, optimizer, loss_function, epochs, x, y, A_hat, train_mask, val_
             correct_val = (pred[val_mask] == y[val_mask]).sum().item()
             acc_val = correct_val/val_mask.sum().item()
 
+        if torch.cuda.is_available():
+            torch.cuda.synchronize()
+        epoch_total_time = time.perf_counter() - epoch_start
+
+        # logging
+        history["train_loss"].append(loss_train.item())
+        history["val_loss"].append(loss_val.item())
+        history["val_acc"].append(acc_val)
+        history["epoch_train_time"].append(train_time)
+        history["epoch_total_time"].append(epoch_total_time)
+
         # early stopping
         if loss_val.item() < best_loss - 1e-6:
             best_loss = loss_val.item()
+            best_epoch = epoch
+            best_val_acc = acc_val
             patience_left = patience
             best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
 
-            # keep track of best validation loss & acc
-            best_val_loss, best_val_acc = loss_val.item(), acc_val
         else:
             patience_left -= 1
             if patience_left == 0:
-                print(f"Early stopping at epoch {epoch} applied. Best val loss: {best_loss:.4f} in epoch: {epoch-patience}")
+                print(f"Early stopping at epoch {epoch} applied. Best val loss: {best_loss:.4f} at epoch: {best_epoch}")
                 break
 
-        # logging
-        train_loss.append(loss_train.item())
-        val_loss.append(loss_val.item())
-        val_acc.append(acc_val)
-        print(f"Epoch: {epoch+1} | Train Loss: {loss_train.item():.4f} | Val Loss: {loss_val.item():.4f} | Val Acc: {acc_val:.4f}")
+        # output progress on individual epoch level
+        print(
+        f"Epoch: {epoch+1} | "
+        f"Train Loss: {loss_train.item():.4f} | "
+        f"Val Loss: {loss_val.item():.4f} | "
+        f"Val Acc: {acc_val:.4f} | "
+        f"Train Time: {train_time:.4f}s"
+        )
+
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+    total_train_time = time.perf_counter() - total_start
 
     if best_state is not None:
         model.load_state_dict(best_state)
 
-    return train_loss, val_loss, val_acc, best_val_loss, best_val_acc
+    summary = {
+        "best_val_loss": best_loss,
+        "best_val_acc": best_val_acc,
+        "best_epoch": best_epoch,
+        "epochs_ran": len(history["train_loss"]),
+        "total_train_time": total_train_time,
+        "mean_epoch_train_time": float(np.mean(history["epoch_train_time"])),
+        "mean_epoch_total_time": float(np.mean(history["epoch_total_time"])),
+    }
+
+    return history, summary
 
 def test(model, x, y, A_hat, test_mask):
     model.eval()
@@ -84,6 +138,9 @@ def test(model, x, y, A_hat, test_mask):
     return acc_test
 
 def main():
+    all_histories = []
+    run_summaries = []
+    
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default="default_config.yaml")
     args = parser.parse_args()
@@ -121,11 +178,8 @@ def main():
     val_mask = data.val_mask
     test_mask = data.test_mask
 
-    # results = {"train_loss": [], "val_acc": [], "test_acc": []}
-    test_acc_history = []
-
     for i in range(len(seeds)):
-            
+        set_seed(seeds[i])  
         # set-up architecture
         model = GCN(input_dim, hidden_dim, output_dim,dropout).to(device)
         optimizer = optim.Adam(
@@ -137,23 +191,38 @@ def main():
         loss_function = nn.CrossEntropyLoss()
 
         # training (incl. validation assessments) & test accuracy
-        train_loss, val_loss, val_acc, best_val_loss, best_val_acc = train(model, optimizer, 
-                                                                        loss_function, epochs, 
-                                                                        data_x, data_y, 
-                                                                        A_hat, train_mask, 
-                                                                        val_mask, early_stopping)
+        history, train_summary = train(model, optimizer, loss_function, epochs, data_x, data_y, A_hat, train_mask, val_mask, early_stopping)
         test_acc = test(model, data_x, data_y, A_hat, test_mask)
         
-        # output final results
-        print(f" (Data Set: {cfg["data"]["data_name"]} in default config) Training Complete! | Test Accuracy: {test_acc} | Best Validation Loss: {best_val_loss}| Best Validation Accuracy: {best_val_acc}")
-        test_acc_history.append(test_acc)
-    
-    print(f"Mean test accuracy of {np.mean(test_acc_history)} over {len(seeds)+1} runs with SD of {np.std(test_acc_history)}")
+        run_summary = {
+            "seed": seeds[i],
+            **train_summary, 
+            "test_acc": test_acc
+        }
+        
+        all_histories.append(history)
+        run_summaries.append(run_summary)
 
-    # this is only needed if multiple experiments are to be carried out
-    #results["train_loss"].append(train_loss)
-    #results["val_acc"].append(val_acc)
-    #results["test_acc"].append(test_acc)
+        # output final results
+        print(
+            f"(Data Set: {cfg['data']['data_name']} in default config) Training Complete! | "
+            f"Test Accuracy: {run_summary['test_acc']:.4f} | "
+            f"Best Validation Loss: {run_summary['best_val_loss']:.4f} | "
+            f"Best Validation Accuracy: {run_summary['best_val_acc']:.4f}"
+            f"Mean epoch total train time: {run_summary['mean_epoch_total_time']:.6f}"
+        )
+    
+    print(
+        f"Mean test accuracy of {np.mean([run['test_acc'] for run in run_summaries]):.4f} "
+        f"over {len(seeds)} runs with SD of {np.std([run['test_acc'] for run in run_summaries], ddof=1):.4f}"
+    )
+
+    results = {
+        "run_summaries": run_summaries,
+        "all_histories": all_histories,
+    }
+
+    save_results(results, "results/gcn_results.json")
 
 if __name__ == "__main__":
     main()

@@ -3,6 +3,8 @@ import os
 import numpy as np
 import scipy.sparse
 import yaml
+import random
+import json
 
 from scipy.sparse import coo_matrix, diags
 from torch_geometric.datasets import Planetoid
@@ -76,3 +78,18 @@ def compute_A_hat(data):
 def load_config(path="config.yaml"):
     with open(path, "r") as f:
         return yaml.safe_load(f)
+    
+def set_seed(seed: int):
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed(seed)
+        torch.cuda.manual_seed_all(seed)
+
+def save_results(results, out_path):
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+
+    with open(out_path, "w") as f:
+        json.dump(results, f, indent=4)
