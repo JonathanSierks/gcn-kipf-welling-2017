@@ -8,6 +8,7 @@ import json
 
 from scipy.sparse import coo_matrix, diags
 from torch_geometric.datasets import Planetoid
+from torch_geometric.loader import NeighborLoader
 
 '''
 def download_torch_geometrics():
@@ -93,3 +94,34 @@ def save_results(results, out_path):
 
     with open(out_path, "w") as f:
         json.dump(results, f, indent=4)
+
+def build_neighbor_loaders(graph_data, train_cfg):
+    data = graph_data.data
+    num_neighbors = train_cfg.num_neighbors
+    batch_size = train_cfg.batch_size
+
+    train_loader = NeighborLoader(
+        data,
+        input_nodes=data.train_mask,
+        num_neighbors=num_neighbors,
+        batch_size=batch_size,
+        shuffle=True,
+    )
+
+    val_loader = NeighborLoader(
+        data,
+        input_nodes=data.val_mask,
+        num_neighbors=num_neighbors,
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    test_loader = NeighborLoader(
+        data,
+        input_nodes=data.test_mask,
+        num_neighbors=num_neighbors,
+        batch_size=batch_size,
+        shuffle=False,
+    )
+
+    return train_loader, val_loader, test_loader
