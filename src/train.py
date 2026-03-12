@@ -341,12 +341,7 @@ def test_mini_batch(model, test_loader, device):
 
     return correct / total
 
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config", default="default_config.yaml")
-    args = parser.parse_args()
-
-    cfg = load_config(args.config)
+def run_from_cfg(cfg):
     seeds = [int(s) for s in cfg["seeds"]]
     
     # device
@@ -462,6 +457,16 @@ def main():
         "run_summaries": run_summaries,
         "all_histories": all_histories,
     }
+
+    return results
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default="default_config.yaml")
+    args = parser.parse_args()
+    cfg = load_config(args.config)
+
+    results = run_from_cfg(cfg)
 
     save_results(results, "results/gcn_results.json")
 
