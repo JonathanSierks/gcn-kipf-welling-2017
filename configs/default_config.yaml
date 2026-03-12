@@ -4,7 +4,7 @@ data:
   data_name: Cora
   data_class: Planetoid
   batch_size: 256
-  batch_mode: full_batch
+  batch_mode: mini_batch
   num_neighbors: [10, 10]
 
 model:
