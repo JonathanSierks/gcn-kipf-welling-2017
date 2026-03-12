@@ -7,6 +7,9 @@ env/
 # Data
 data/*
 
+# Output
+results/*
+
 # Notebooks
 .ipynb_checkpoints/
 
