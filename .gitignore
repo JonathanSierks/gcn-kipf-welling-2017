@@ -8,7 +8,7 @@ env/
 data/*
 
 # Output
-results/*
+results/*.json
 
 # Notebooks
 .ipynb_checkpoints/
