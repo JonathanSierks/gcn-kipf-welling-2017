@@ -1,4 +1,4 @@
-seeds: [7, 19, 42, 73, 101, 256, 512, 1024, 2048]
+seeds: [7]
 
 data:
   data_name: Cora

@@ -1,9 +1,9 @@
 seeds: [7, 19, 42, 73, 101, 256, 512, 1024, 2048]
-
+   
 data:
-  data_name: Cora
+  data_name: CiteSeer
   data_class: Planetoid
-  batch_size: 256
+  batch_size: 64
   batch_mode: full_batch
   num_neighbors: [10, 10]
 

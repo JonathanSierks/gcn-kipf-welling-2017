@@ -4,6 +4,7 @@ from utils import *
 from model import *
 from typing import Any
 from dataclasses import dataclass
+from pathlib import Path
 
 import argparse
 import math
@@ -348,7 +349,18 @@ def run_from_cfg(cfg):
     device = torch.device(cfg["train"]["device"] if torch.cuda.is_available() else "cpu")
 
     # download or (if already downloaded) reload data
-    data = load_data(cfg["data"]["data_name"], os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"), cfg["data"]["data_class"])
+    
+    # check if we are running the code as a pure script or via notebook
+    if "__file__" in globals():
+        project_root = Path(__file__).resolve().parents[1]
+    else:
+        project_root = Path("..").resolve()
+    data = load_data(
+        cfg["data"]["data_name"], 
+        str(project_root / "data"), 
+        cfg["data"]["data_class"])
+
+    #data = load_data(cfg["data"]["data_name"], os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data"), cfg["data"]["data_class"])
     data_x = data.x.to(device)
     data_y = data.y.to(device)
 
@@ -458,7 +470,19 @@ def run_from_cfg(cfg):
         "all_histories": all_histories,
     }
 
+    if "__file__" in globals():
+        project_root = Path(__file__).resolve().parents[1]
+    else:
+        project_root = Path("..").resolve()
+
+    save_results(
+        results,
+        str(project_root / "results" / f"gcn_results_{cfg['data']['data_name']}.json")
+    )
+
     return results
+
+    
 
 def main():
     parser = argparse.ArgumentParser()

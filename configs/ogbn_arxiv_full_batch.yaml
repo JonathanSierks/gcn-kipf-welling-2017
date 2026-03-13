@@ -1,15 +1,15 @@
-seeds: [7, 19, 42, 73, 101, 256, 512, 1024, 2048]
+seeds: [7, 19, 42]
 
 data:
-  data_name: Cora
-  data_class: Planetoid
-  batch_size: 256
+  data_name: ogbn-arxiv
+  data_class: ogbn
+  batch_size: 512
   batch_mode: full_batch
-  num_neighbors: [10, 10]
+  num_neighbors: [15, 15]
 
 model:
   name: gcn
-  hidden_dim: 16
+  hidden_dim: 64
   dropout: 0.5
   early_stopping: 10
 

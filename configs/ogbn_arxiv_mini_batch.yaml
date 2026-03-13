@@ -1,0 +1,20 @@
+seeds: [7, 19, 42]
+
+data:
+  data_name: ogbn-arxiv
+  data_class: ogbn
+  batch_size: 512
+  batch_mode: mini_batch
+  num_neighbors: [15, 15]
+
+model:
+  name: gcn
+  hidden_dim: 64
+  dropout: 0.5
+  early_stopping: 10
+
+train:
+  epochs: 200
+  lr: 0.01
+  weight_decay: 0.0005
+  device: cuda
